@@ -1,7 +1,7 @@
 CC=gcc
 
 IDIR =../include
-CFLAGS=-I$(IDIR)
+CFLAGS=-I$(IDIR) -isystem include/catch/include
 ELEVENFLAGS=-std=c++11
 
 ODIR=obj
@@ -13,7 +13,7 @@ LIBS=-lstdc++
 _DEPS = 
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = test.o
+_OBJ = catchMain.o testPipelinePattern.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 
