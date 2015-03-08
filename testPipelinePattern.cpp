@@ -16,16 +16,24 @@
  *
  * =====================================================================================
  */
+#include <cstdlib>	// Too bad we can not use the C++11 random functions due to C++98 backwards compatibility of the framework :-(
 #include <stdint.h>
-#include <catch.hpp>
+#include <vector>
+#include <limits>
 #include <iostream>
 
+#include <catch.hpp>
 
 #include "pipelinePattern.hpp"
 
+using std::vector;
+using std::numeric_limits;
+using std::srand;
+using std::rand;
+
 class Object1 {
     public:
-		Object1(void) : _nbOfTimesCalled(0U) {
+		Object1(void) : _nbOfTimesCalled(0U), _receivedContent() {
 			;
 		}
 
@@ -33,12 +41,22 @@ class Object1 {
 			++_nbOfTimesCalled;
         }
 
+		void operator() (uint32_t x) {
+			++_nbOfTimesCalled;
+			_receivedContent.push_back(x);
+		}
+
 		uint32_t getNbOfTimesCalled(void) {
 			return _nbOfTimesCalled;
 		}
 
+		vector<uint32_t> getReceivedOrderedContent(void) {
+			return _receivedContent;
+		}
+
 	private:
 		uint32_t _nbOfTimesCalled; 
+		vector<uint32_t> _receivedContent; 
 };
 
 class Object2 {
@@ -51,12 +69,21 @@ class Object2 {
 			++_nbOfTimesCalled;
         }
 
+		void operator() (uint32_t x) {
+			++_nbOfTimesCalled;
+			_receivedContent.push_back(x);
+		}
+
 		uint32_t getNbOfTimesCalled(void) {
 			return _nbOfTimesCalled;
 		}
 
+		vector<uint32_t> getReceivedOrderedContent(void) {
+			return _receivedContent;
+		}
 	private:
 		uint32_t _nbOfTimesCalled;
+		vector<uint32_t> _receivedContent; 
 };
 
 class Object3 {
@@ -69,11 +96,21 @@ class Object3 {
 			++_nbOfTimesCalled;
         }
 
+		void operator() (uint32_t x) {
+			++_nbOfTimesCalled;
+			_receivedContent.push_back(x);
+		}
+
 		uint32_t getNbOfTimesCalled(void) {
 			return _nbOfTimesCalled;
 		}
+
+		vector<uint32_t> getReceivedOrderedContent(void) {
+			return _receivedContent;
+		}
 	private:
 		uint32_t _nbOfTimesCalled;
+		vector<uint32_t> _receivedContent; 
 };
 
 SCENARIO( "If we use the pipeline, objects are called the defined number of times", "[generalTest]" ) {
@@ -99,7 +136,7 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 				pipeline(action);
 			}
 
-			THEN("We should have called the object") {
+			THEN("We should have called the object the appropriate number of times") {
 				REQUIRE(o1.getNbOfTimesCalled() == nbOfTimesToLoop);
 			}
 		}
@@ -111,6 +148,67 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 			THEN("We should have called all objects once") {
 				REQUIRE(o1.getNbOfTimesCalled() == 1);
 				REQUIRE(o1.getNbOfTimesCalled() == 1);
+			}
+		}
+		
+		WHEN("We call the pipeline with these three objects as action ten times") {
+			const uint8_t nbOfTimesToLoop = 10U;
+			Action3<Object1, Object2, Object3> action(o1, o2, o3);
+			for(uint8_t i = 0; i < nbOfTimesToLoop; ++i) {
+				pipeline(action);
+			}
+
+			THEN("We should have called all objects the appropriate number of times") {
+				REQUIRE(o1.getNbOfTimesCalled() == nbOfTimesToLoop);
+				REQUIRE(o2.getNbOfTimesCalled() == nbOfTimesToLoop);
+				REQUIRE(o3.getNbOfTimesCalled() == nbOfTimesToLoop);
+			}
+		}
+	}
+}
+
+SCENARIO("Using the pipeline on loops in the elements", "[loopTests]") {
+	GIVEN("A collection of elements in a certain order and a fully defined Action") {
+		const uint32_t nbOfElements = 10;
+		const uint32_t lowerLimit = numeric_limits<uint32_t>::min();
+		const uint32_t upperLimit = numeric_limits<uint32_t>::max();
+
+		// Construct the collection of numbered elements
+		vector<uint32_t> orderedElementsCollection;
+		orderedElementsCollection.reserve(nbOfElements);
+
+		srand(0);
+		for(uint32_t i = 0; i < nbOfElements; ++i) {
+			uint32_t randomInt = rand() % (upperLimit - lowerLimit) + lowerLimit;
+			orderedElementsCollection.push_back(randomInt);
+		}
+		REQUIRE(nbOfElements == orderedElementsCollection.size());
+
+		// Construct the Action
+		Object1 o1;
+		Object2 o2;
+		Object3 o3;
+		Action3<Object1, Object2, Object3> action(o1, o2, o3);
+
+		WHEN("We loop over the elements, calling the pipeline for each element") {
+			for(vector<uint32_t>::iterator it = orderedElementsCollection.begin(); it != orderedElementsCollection.end(); ++it) {
+				elementPipeline(action, *it);
+			}
+
+			THEN("We should find the same ordered number of elements in each action of the pipeline") {
+				vector<uint32_t> o1Elements = o1.getReceivedOrderedContent();	
+				vector<uint32_t> o2Elements = o1.getReceivedOrderedContent();	
+				vector<uint32_t> o3Elements = o1.getReceivedOrderedContent();	
+
+				REQUIRE(o1Elements.size() == orderedElementsCollection.size());
+				REQUIRE(o2Elements.size() == orderedElementsCollection.size());
+				REQUIRE(o3Elements.size() == orderedElementsCollection.size());
+
+				for(uint32_t i = 0; i < nbOfElements; ++i) {
+					REQUIRE(o1Elements[i] == orderedElementsCollection[i]);
+					REQUIRE(o2Elements[i] == orderedElementsCollection[i]);
+					REQUIRE(o3Elements[i] == orderedElementsCollection[i]);
+				}
 			}
 		}
 	}
