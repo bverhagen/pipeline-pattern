@@ -14,8 +14,13 @@
 template<typename T, typename... T2>
 class Action : public Action<T2...> {
     public:
-		// Explicitly deny access to default constructor
-		Action() = delete;
+		Action() : _t1(*(new T())) {
+			static_assert(false, "The number of given types should be equal to the number of constructor arguments");
+		}
+
+		Action(T& t1) : _t1(t1) {
+			static_assert(false, "The number of given types should be equal to the number of constructor arguments");
+		}
 
         Action(T& t1, T2&... t2...) : _t1(t1), Action<T2...>(t2...) {
 			;
@@ -37,10 +42,10 @@ class Action : public Action<T2...> {
 template<typename T>
 class Action<T> {
     public:
-		// Explicitly deny access to default constructor
-		Action() = delete;
+		Action() : _t1(*(new T())) {
+			static_assert(false, "The number of given types should be equal to the number of constructor arguments");
+		}
 
-		// TODO declare move constructor
 		Action(T& t1) : _t1(t1) {
 			;
 		}

@@ -10,7 +10,7 @@ LDIR =../lib
 
 LIBS=-lstdc++
 
-_DEPS = 
+_DEPS =
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = catchMain.o testPipelinePattern.o
@@ -35,7 +35,7 @@ $(OUTPUTDIR)/testNinetyEight: $(OBJ)
 
 # Add C++11 flag
 $(OUTPUTDIR)/testEleven: CFLAGS+=$(ELEVENFLAGS)
-$(OUTPUTDIR)/testEleven: $(OBJ)
+$(OUTPUTDIR)/testEleven: $(OBJ) $(HDEPS)
 		$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 

@@ -16,6 +16,7 @@
  *
  * =====================================================================================
  */
+
 #include <cstdlib>	// Too bad we can not use the C++11 random functions due to C++98 backwards compatibility of the framework :-(
 #include <stdint.h>
 #include <vector>
@@ -24,12 +25,31 @@
 
 #include <catch.hpp>
 
+#include "staticAssertException.hpp"
+
+// Mock for static_assert to check at runtime whether this one is activated in production code.
+#define static_assert(cond, msg) do { \
+									if( ! cond) { \
+										throw StaticAssertException(msg); \
+									} \
+								} while(false);
+
 #include "pipelinePattern.hpp"
 
 using std::vector;
 using std::numeric_limits;
 using std::srand;
 using std::rand;
+
+template <typename Func>
+static bool isStaticAssertActivated(Func f, const std::string& message) {
+	try {
+		f();
+	} catch (const StaticAssertException& e) {
+		return (e.what() == message);
+	}
+	return false;
+};
 
 class Object1 {
     public:
@@ -111,6 +131,43 @@ class Object3 {
 	private:
 		uint32_t _nbOfTimesCalled;
 		vector<uint32_t> _receivedContent; 
+};
+
+// If this was C++11, we should use lambda's instead
+struct UncompilableActionWrapper1 {
+	void operator()(void) {
+		Action<Object1> action;
+	}
+};
+
+struct UncompilableActionWrapper2 {
+	void operator()(void) {
+		Action<Object1, Object2, Object3> action;
+	}
+};
+
+struct UncompilableActionWrapper3 {
+	void operator()(void) {
+		Object1 o1;
+		Action<Object1, Object2> action(o1);
+	}
+};
+
+struct UncompilableActionWrapper4 {
+	void operator()(void) {
+		Object1 o1;
+		Object2 o2;
+		Action<Object1, Object2, Object3> action(o1);
+	}
+};
+
+struct UncompilableActionWrapper5 {
+	void operator()(void) {
+		Object1 o1;
+		Object2 o2;
+		// FIXME
+//		Action<Object1, Object2, Object3> action(o1, o2);
+	}
 };
 
 SCENARIO( "If we use the pipeline, objects are called the defined number of times", "[generalTest]" ) {
@@ -195,7 +252,7 @@ SCENARIO("Using the pipeline on loops in the elements", "[loopTests]") {
 				elementPipeline(action, *it);
 			}
 
-			THEN("We should find the same ordered number of elements in each action of the pipeline") {
+			THEN("Each of the objects should return the same size for each call to the pipeline") {
 				vector<uint32_t> o1Elements = o1.getReceivedOrderedContent();	
 				vector<uint32_t> o2Elements = o1.getReceivedOrderedContent();	
 				vector<uint32_t> o3Elements = o1.getReceivedOrderedContent();	
@@ -203,6 +260,12 @@ SCENARIO("Using the pipeline on loops in the elements", "[loopTests]") {
 				REQUIRE(o1Elements.size() == orderedElementsCollection.size());
 				REQUIRE(o2Elements.size() == orderedElementsCollection.size());
 				REQUIRE(o3Elements.size() == orderedElementsCollection.size());
+			}
+
+			THEN("We should find the same ordered number of elements in each action of the pipeline") {
+				vector<uint32_t> o1Elements = o1.getReceivedOrderedContent();	
+				vector<uint32_t> o2Elements = o1.getReceivedOrderedContent();	
+				vector<uint32_t> o3Elements = o1.getReceivedOrderedContent();	
 
 				for(uint32_t i = 0; i < nbOfElements; ++i) {
 					REQUIRE(o1Elements[i] == orderedElementsCollection[i]);
@@ -210,6 +273,43 @@ SCENARIO("Using the pipeline on loops in the elements", "[loopTests]") {
 					REQUIRE(o3Elements[i] == orderedElementsCollection[i]);
 				}
 			}
+		}
+	}
+}
+
+SCENARIO("The user tries to pass a number of types that is higher than the number of objects to an Action object", "[compileError]") {
+	WHEN("We try to create an Action with an object type and no arguments") {
+		THEN("We should get a compilation error") {
+			UncompilableActionWrapper1 test;
+			REQUIRE(isStaticAssertActivated(test, "The number of given types should be equal to the number of constructor arguments") == true);
+		}
+	}
+
+	WHEN("We try to create an Action with three object types and no arguments") {
+		THEN("We should get a compilation error") {
+			UncompilableActionWrapper2 test;
+			REQUIRE(isStaticAssertActivated(test, "The number of given types should be equal to the number of constructor arguments") == true);
+		}
+	}
+
+	WHEN("We try to create an Action with two object types and only one argument") {
+		THEN("We should get a compilation error") {
+			UncompilableActionWrapper3 test;
+			REQUIRE(isStaticAssertActivated(test, "The number of given types should be equal to the number of constructor arguments") == true);
+		}
+	}
+
+	WHEN("We try to create an Action with three object types and only one argument") {
+		THEN("We should get a compilation error") {
+			UncompilableActionWrapper4 test;
+			REQUIRE(isStaticAssertActivated(test, "The number of given types should be equal to the number of constructor arguments") == true);
+		}
+	}
+
+	WHEN("We try to create an Action with three object types and only two arguments") {
+		THEN("We should get a compilation error") {
+			UncompilableActionWrapper4 test;
+			REQUIRE(isStaticAssertActivated(test, "The number of given types should be equal to the number of constructor arguments") == true);
 		}
 	}
 }
