@@ -62,7 +62,6 @@ class Action<T> {
 template<typename T>
 class Action {
     public:
-		// TODO declare move constructor
 		Action(T& t1) : _t1(t1) {
 			;
 		}
