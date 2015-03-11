@@ -17,7 +17,7 @@ class Action : public Action<T2...> {
 		// Explicitly deny access to default constructor
 		Action() = delete;
 
-        Action(T& t1, T2... t2...) : _t1(t1), Action<T2...>(t2...) {
+        Action(T& t1, T2&... t2...) : _t1(t1), Action<T2...>(t2...) {
 			;
         }
 
@@ -26,7 +26,7 @@ class Action : public Action<T2...> {
             Action<T2...>::operator()();
         }
 		
-		void operator(uint32_t x) {
+		void operator() (uint32_t x) {
 			_t1(x);
 			Action<T2...>::operator()(x);
 		}

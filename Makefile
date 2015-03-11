@@ -33,8 +33,10 @@ testEleven: $(OUTPUTDIR)/testEleven
 $(OUTPUTDIR)/testNinetyEight: $(OBJ)
 		$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
+# Add C++11 flag
+$(OUTPUTDIR)/testEleven: CFLAGS+=$(ELEVENFLAGS)
 $(OUTPUTDIR)/testEleven: $(OBJ)
-		$(CC) -o $@ $^ $(CFLAGS) $(ELEVENFLAGS) $(LIBS)
+		$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 
 .PHONY: clean
