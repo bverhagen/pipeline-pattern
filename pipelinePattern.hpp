@@ -20,9 +20,8 @@ class Pipeline : public Pipeline<FunctorElementType, T2...>  {
 			;
         }
 
-        void operator() (FunctorElementType x) {
-            _t1(x);
-            Pipeline<FunctorElementType, T2...>::operator()(x);
+        FunctorElementType operator() (const FunctorElementType x) {
+            return Pipeline<FunctorElementType, T2...>::operator()(_t1(x));
         }
 
     private:
@@ -57,8 +56,8 @@ class Pipeline<FunctorElementType, T> {
 			;
 		}
 
-		void operator() (FunctorElementType x) {
-			_t1(x);
+		FunctorElementType operator() (const FunctorElementType x) {
+			return _t1(x);
 		}
 
     private:
@@ -92,7 +91,7 @@ class Pipeline {
 			;
 		}
 
-		void operator() (FunctorType x) {
+		FunctorType operator() (const FunctorType x) {
 			_t1(x);
 		}
 
@@ -124,10 +123,10 @@ class Pipeline2 : public Pipeline<FunctorType, T2> {
 			;
 		}
 
-		void operator() (FunctorType x) {
-			_t1(x);
-			Pipeline<FunctorType, T2>::operator()(x);
+		FunctorType operator() (const FunctorType x) {
+			return Pipeline<FunctorType, T2>::operator()(_t1(x));
 		}
+
 	private:
 		Pipeline2();
 		T& _t1;
@@ -156,9 +155,8 @@ class Pipeline3 : public Pipeline2<FunctorType, T2, T3> {
 			;
 		}
 
-		void operator() (FunctorType x) {
-			_t1(x);
-			Pipeline2<FunctorType, T2, T3>::operator()(x);
+		FunctorType operator() (const FunctorType x) {
+			return Pipeline2<FunctorType, T2, T3>::operator()(_t1(x));
 		}
 	private:
 		Pipeline3();

@@ -1,7 +1,7 @@
 CC=gcc
 
 IDIR =../include
-CFLAGS=-I$(IDIR) -isystem include/catch/include
+CFLAGS=-O3 -I$(IDIR) -isystem include/catch/include
 ELEVENFLAGS=-std=c++11
 
 ODIR=obj
@@ -16,6 +16,8 @@ DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 _OBJ = catchMain.o testPipelinePattern.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
+_TESTOBJ = testPerformance.o
+TESTOBJ = $(patsubst %,$(ODIR)/%,$(_TESTOBJ))
 
 $(ODIR)/%.o: %.cpp $(DEPS)
 		$(CC) -c -o $@ $< $(CFLAGS)
@@ -36,6 +38,13 @@ $(OUTPUTDIR)/testNinetyEight: $(OBJ)
 # Add C++11 flag
 $(OUTPUTDIR)/testEleven: CFLAGS+=$(ELEVENFLAGS)
 $(OUTPUTDIR)/testEleven: $(OBJ) $(HDEPS)
+		$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+.PHONY: testPerformance
+testPerformance: $(OUTPUTDIR)/testPerformance
+
+$(OUTPUTDIR)/testPerformance: CFLAGS+=$(ELEVENFLAGS)
+$(OUTPUTDIR)/testPerformance: $(TESTOBJ)
 		$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 

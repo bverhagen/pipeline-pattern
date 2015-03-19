@@ -42,9 +42,10 @@ class Object1 {
 			++_nbOfTimesCalled;
         }
 
-		void operator() (uint32_t x) {
+		uint32_t operator() (uint32_t x) {
 			++_nbOfTimesCalled;
 			_receivedContent.push_back(x);
+			return x;
 		}
 
 		uint32_t getNbOfTimesCalled(void) {
@@ -70,9 +71,10 @@ class Object2 {
 			++_nbOfTimesCalled;
         }
 
-		void operator() (uint32_t x) {
+		uint32_t operator() (uint32_t x) {
 			++_nbOfTimesCalled;
 			_receivedContent.push_back(x);
+			return x;
 		}
 
 		uint32_t getNbOfTimesCalled(void) {
@@ -97,9 +99,10 @@ class Object3 {
 			++_nbOfTimesCalled;
         }
 
-		void operator() (uint32_t x) {
+		uint32_t operator() (uint32_t x) {
 			++_nbOfTimesCalled;
 			_receivedContent.push_back(x);
+			return x;
 		}
 
 		uint32_t getNbOfTimesCalled(void) {
@@ -193,7 +196,7 @@ SCENARIO("Using the pipeline on loops in the elements", "[loopTests]") {
 
 		WHEN("We loop over the elements, calling the pipeline for each element") {
 			for(vector<uint32_t>::iterator it = orderedElementsCollection.begin(); it != orderedElementsCollection.end(); ++it) {
-				action(*it);
+				uint32_t result = action(*it);
 			}
 
 			THEN("Each of the objects should return the same size for each call to the pipeline") {
