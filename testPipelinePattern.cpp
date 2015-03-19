@@ -25,31 +25,12 @@
 
 #include <catch.hpp>
 
-#include "staticAssertException.hpp"
-
-// Mock for static_assert to check at runtime whether this one is activated in production code.
-#define static_assert(cond, msg) do { \
-									if( ! cond) { \
-										throw StaticAssertException(msg); \
-									} \
-								} while(false);
-
 #include "pipelinePattern.hpp"
 
 using std::vector;
 using std::numeric_limits;
 using std::srand;
 using std::rand;
-
-template <typename Func>
-static bool isStaticAssertActivated(Func f, const std::string& message) {
-	try {
-		f();
-	} catch (const StaticAssertException& e) {
-		return (e.what() == message);
-	}
-	return false;
-};
 
 class Object1 {
     public:
@@ -133,43 +114,6 @@ class Object3 {
 		vector<uint32_t> _receivedContent; 
 };
 
-// If this was C++11, we should use lambda's instead
-struct UncompilableActionWrapper1 {
-	void operator()(void) {
-		Action<Object1> action;
-	}
-};
-
-struct UncompilableActionWrapper2 {
-	void operator()(void) {
-		Action<Object1, Object2, Object3> action;
-	}
-};
-
-struct UncompilableActionWrapper3 {
-	void operator()(void) {
-		Object1 o1;
-		Action<Object1, Object2> action(o1);
-	}
-};
-
-struct UncompilableActionWrapper4 {
-	void operator()(void) {
-		Object1 o1;
-		Object2 o2;
-		Action<Object1, Object2, Object3> action(o1);
-	}
-};
-
-struct UncompilableActionWrapper5 {
-	void operator()(void) {
-		Object1 o1;
-		Object2 o2;
-		// FIXME
-//		Action<Object1, Object2, Object3> action(o1, o2);
-	}
-};
-
 SCENARIO( "If we use the pipeline, objects are called the defined number of times", "[generalTest]" ) {
 	GIVEN("Three initialized objects") {
 	    Object1 o1;
@@ -177,8 +121,8 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 		Object3 o3;
 
 		WHEN("We call the pipeline with one object as action") {
-			Action<Object1> action(o1);
-			pipeline(action);
+			Action<void, Object1> action(o1);
+			action();
 
 			THEN("We should have called the object") {
 				REQUIRE(o1.getNbOfTimesCalled() == 1);
@@ -188,9 +132,9 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 		WHEN("We call the pipeline with one object as action ten times") {
 			const uint8_t nbOfTimesToLoop = 10U;
 
-			Action<Object1> action(o1);
+			Action<void, Object1> action(o1);
 			for(uint8_t i = 0; i < nbOfTimesToLoop; ++i) {
-				pipeline(action);
+				action();
 			}
 
 			THEN("We should have called the object the appropriate number of times") {
@@ -199,8 +143,8 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 		}
 
 		WHEN("We call the pipeline with these two objects as action") {
-			Action2<Object1, Object2> action(o1, o2);
-			pipeline(action);
+			Action2<void, Object1, Object2> action(o1, o2);
+			action();
 
 			THEN("We should have called all objects once") {
 				REQUIRE(o1.getNbOfTimesCalled() == 1);
@@ -210,9 +154,9 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 		
 		WHEN("We call the pipeline with these three objects as action ten times") {
 			const uint8_t nbOfTimesToLoop = 10U;
-			Action3<Object1, Object2, Object3> action(o1, o2, o3);
+			Action3<void, Object1, Object2, Object3> action(o1, o2, o3);
 			for(uint8_t i = 0; i < nbOfTimesToLoop; ++i) {
-				pipeline(action);
+				action();
 			}
 
 			THEN("We should have called all objects the appropriate number of times") {
@@ -245,11 +189,11 @@ SCENARIO("Using the pipeline on loops in the elements", "[loopTests]") {
 		Object1 o1;
 		Object2 o2;
 		Object3 o3;
-		Action3<Object1, Object2, Object3> action(o1, o2, o3);
+		Action3<uint32_t, Object1, Object2, Object3> action(o1, o2, o3);
 
 		WHEN("We loop over the elements, calling the pipeline for each element") {
 			for(vector<uint32_t>::iterator it = orderedElementsCollection.begin(); it != orderedElementsCollection.end(); ++it) {
-				elementPipeline(action, *it);
+				action(*it);
 			}
 
 			THEN("Each of the objects should return the same size for each call to the pipeline") {
@@ -273,43 +217,6 @@ SCENARIO("Using the pipeline on loops in the elements", "[loopTests]") {
 					REQUIRE(o3Elements[i] == orderedElementsCollection[i]);
 				}
 			}
-		}
-	}
-}
-
-SCENARIO("The user tries to pass a number of types that is higher than the number of objects to an Action object", "[compileError]") {
-	WHEN("We try to create an Action with an object type and no arguments") {
-		THEN("We should get a compilation error") {
-			UncompilableActionWrapper1 test;
-			REQUIRE(isStaticAssertActivated(test, "The number of given types should be equal to the number of constructor arguments") == true);
-		}
-	}
-
-	WHEN("We try to create an Action with three object types and no arguments") {
-		THEN("We should get a compilation error") {
-			UncompilableActionWrapper2 test;
-			REQUIRE(isStaticAssertActivated(test, "The number of given types should be equal to the number of constructor arguments") == true);
-		}
-	}
-
-	WHEN("We try to create an Action with two object types and only one argument") {
-		THEN("We should get a compilation error") {
-			UncompilableActionWrapper3 test;
-			REQUIRE(isStaticAssertActivated(test, "The number of given types should be equal to the number of constructor arguments") == true);
-		}
-	}
-
-	WHEN("We try to create an Action with three object types and only one argument") {
-		THEN("We should get a compilation error") {
-			UncompilableActionWrapper4 test;
-			REQUIRE(isStaticAssertActivated(test, "The number of given types should be equal to the number of constructor arguments") == true);
-		}
-	}
-
-	WHEN("We try to create an Action with three object types and only two arguments") {
-		THEN("We should get a compilation error") {
-			UncompilableActionWrapper4 test;
-			REQUIRE(isStaticAssertActivated(test, "The number of given types should be equal to the number of constructor arguments") == true);
 		}
 	}
 }
