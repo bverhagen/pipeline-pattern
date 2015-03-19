@@ -121,7 +121,7 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 		Object3 o3;
 
 		WHEN("We call the pipeline with one object as action") {
-			Action<void, Object1> action(o1);
+			Pipeline<void, Object1> action(o1);
 			action();
 
 			THEN("We should have called the object") {
@@ -132,7 +132,7 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 		WHEN("We call the pipeline with one object as action ten times") {
 			const uint8_t nbOfTimesToLoop = 10U;
 
-			Action<void, Object1> action(o1);
+			Pipeline<void, Object1> action(o1);
 			for(uint8_t i = 0; i < nbOfTimesToLoop; ++i) {
 				action();
 			}
@@ -143,7 +143,7 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 		}
 
 		WHEN("We call the pipeline with these two objects as action") {
-			Action2<void, Object1, Object2> action(o1, o2);
+			Pipeline2<void, Object1, Object2> action(o1, o2);
 			action();
 
 			THEN("We should have called all objects once") {
@@ -154,7 +154,7 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 		
 		WHEN("We call the pipeline with these three objects as action ten times") {
 			const uint8_t nbOfTimesToLoop = 10U;
-			Action3<void, Object1, Object2, Object3> action(o1, o2, o3);
+			Pipeline3<void, Object1, Object2, Object3> action(o1, o2, o3);
 			for(uint8_t i = 0; i < nbOfTimesToLoop; ++i) {
 				action();
 			}
@@ -169,7 +169,7 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 }
 
 SCENARIO("Using the pipeline on loops in the elements", "[loopTests]") {
-	GIVEN("A collection of elements in a certain order and a fully defined Action") {
+	GIVEN("A collection of elements in a certain order and a fully defined Pipeline") {
 		const uint32_t nbOfElements = 10;
 		const uint32_t lowerLimit = numeric_limits<uint32_t>::min();
 		const uint32_t upperLimit = numeric_limits<uint32_t>::max();
@@ -185,11 +185,11 @@ SCENARIO("Using the pipeline on loops in the elements", "[loopTests]") {
 		}
 		REQUIRE(nbOfElements == orderedElementsCollection.size());
 
-		// Construct the Action
+		// Construct the Pipeline
 		Object1 o1;
 		Object2 o2;
 		Object3 o3;
-		Action3<uint32_t, Object1, Object2, Object3> action(o1, o2, o3);
+		Pipeline3<uint32_t, Object1, Object2, Object3> action(o1, o2, o3);
 
 		WHEN("We loop over the elements, calling the pipeline for each element") {
 			for(vector<uint32_t>::iterator it = orderedElementsCollection.begin(); it != orderedElementsCollection.end(); ++it) {
