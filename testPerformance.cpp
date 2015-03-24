@@ -20,13 +20,16 @@
 #include <vector>
 #include <chrono>
 #include <iostream>
+#include <limits>
 
 #include "pipelinePattern.hpp"
 
 using std::vector;
 using std::srand;
 using std::rand;
+using std::numeric_limits;
 using std::cout;
+using std::cerr;
 using std::endl;
 
 using namespace std::chrono;
@@ -37,7 +40,7 @@ class Shift {
 			;
 		}
 
-		uint32_t operator() (uint32_t x) {
+		uint32_t operator() (uint32_t x) const {
 			return x << _shiftAmount;
 		}
 	
@@ -51,76 +54,108 @@ class Increase {
 			;
 		}
 
-		uint32_t operator() (uint32_t x) {
+		uint32_t operator() (uint32_t x) const {
 			return x + _amount;
 		}
 	private:
 		const uint32_t _amount;
 };
 
-int main(int argc, char** argv) {
-	uint32_t testSize = 1024;
-	if(argc > 1) {
-		testSize = strtol(argv[1], 0, 10);
-	}
+class Square {
+	public:
+		Square(void) {
+			;
+		}
 
-	srand(0);
-	vector<uint32_t> testMatrix;
-	testMatrix.reserve(testSize);
-	for(auto it = testMatrix.begin(); it != testMatrix.end(); ++it) {
-		*it = rand();
-	}	
-
-	Shift shift(2);
-	Increase increase(2);
-
-	high_resolution_clock::time_point t1 = high_resolution_clock::now();
-	vector<uint32_t> unrolledResult;
+		uint32_t operator() (uint32_t x) const {
+			return x*x;
+		}
+};
+template<typename T>
+void manual(uint32_t testSize, const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
+	vector<T> unrolledResult;
 	unrolledResult.reserve(testSize);
-	for(uint32_t i = 0; i < testSize; ++i) {
-		unrolledResult[i] = increase(shift(testMatrix[i]));
+	auto unrolledResultIt = unrolledResult.begin();
+	for(auto testMatrixIt = testMatrix.begin(); testMatrixIt != testMatrix.end(); ++testMatrixIt, ++unrolledResultIt) {
+		*unrolledResultIt = square(increase(shift(*testMatrixIt)));
 	}
-	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+}
 
-	duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-  	cout << "Pipeline: " << time_span.count() << " seconds." << endl;
-
-	t1 = high_resolution_clock::now();
-	vector<uint32_t> pipelineResult;
+template<typename T>
+void pipelineTest(uint32_t testSize, const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
+	vector<T> pipelineResult;
 	pipelineResult.reserve(testSize);
-	for(uint32_t i = 0; i < testSize; ++i) {
-		pipelineResult[i] = pipeline(testMatrix[i], shift, increase);	
+	auto pipelineResultIt = pipelineResult.begin();
+	for(auto testMatrixIt = testMatrix.begin(); testMatrixIt != testMatrix.end(); ++testMatrixIt, ++pipelineResultIt) {
+		*pipelineResultIt = pipeline(*testMatrixIt, shift, increase, square);	
 	}
-	t2 = high_resolution_clock::now();
+}
 
-	time_span = duration_cast<duration<double>>(t2 - t1);
-  	cout << "Generated Pipeline: " << time_span.count() << " seconds." << endl;
-
-	t1 = high_resolution_clock::now();
+template<typename T>
+void stages(uint32_t testSize, const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
 	vector<uint32_t> directResult;
 	directResult.reserve(testSize);
-	for(uint32_t i = 0; i < testSize; ++i) {
-		directResult[i] = shift(testMatrix[i]);
+	auto directResultIt = directResult.begin();
+	for(auto testMatrixIt = testMatrix.begin(); testMatrixIt != testMatrix.end(); ++testMatrixIt, ++directResultIt) {
+		*directResultIt = shift(*testMatrixIt);
 	}
-	for(uint32_t i = 0; i < testSize; ++i) {
-		directResult[i] = increase(directResult[i]);
-	}
-	t2 = high_resolution_clock::now();
-
-	time_span = duration_cast<duration<double>>(t2 - t1);
-  	cout << "Sequential (non-it): " << time_span.count() << " seconds." << endl;
-
-	t1 = high_resolution_clock::now();
-	vector<uint32_t> directResultIt;
-	directResultIt.reserve(testSize);
-	for(uint32_t i = 0; i < testSize; ++i) {
-		directResultIt[i] = shift(testMatrix[i]);
-	}
-	for(auto it = directResultIt.begin(); it != directResultIt.end(); ++it) {
+	for(auto it = directResult.begin(); it != directResult.end(); ++it) {
 		*it = increase(*it);
 	}
-	t2 = high_resolution_clock::now();
+	for(auto it = directResult.begin(); it != directResult.end(); ++it) {
+		*it = square(*it);
+	}
+}
 
-	time_span = duration_cast<duration<double>>(t2 - t1);
-  	cout << "Sequential (it): " << time_span.count() << " seconds." << endl;
+int main(int argc, char** argv) {
+	uint32_t testSize = 1024U;
+	uint32_t nbOfIterations = 1U;
+	if(argc > 1) {
+		uint64_t inputSize = strtol(argv[1], 0, 10);
+		if(inputSize < numeric_limits<uint32_t>::max()) {
+			testSize = inputSize;
+		} else {
+			cerr << "Error: input size does not fit in 32-bit variable" << endl;
+			return 1;
+		}
+	}
+
+	if(argc > 2) {
+		nbOfIterations = strtol(argv[2], 0, 10);
+	}
+ 	
+	duration<double> time_span_manual = duration<double>::zero();
+	duration<double> time_span_pipeline = duration<double>::zero();
+	duration<double> time_span_stages = duration<double>::zero();
+
+	for(auto i = 0; i < nbOfIterations; ++i) {
+		srand(0);
+		vector<uint32_t> testMatrix;
+		testMatrix.reserve(testSize);
+		for(int j = 0; j < testSize; ++j) {
+			testMatrix.push_back(rand());
+		}	
+
+		Shift shift(2);
+		Increase increase(2);
+		Square square;
+
+		high_resolution_clock::time_point t1 = high_resolution_clock::now();
+		manual(testSize, testMatrix, shift, increase, square);	
+		high_resolution_clock::time_point t2 = high_resolution_clock::now();
+		time_span_manual += duration_cast<duration<double>>(t2 - t1);
+
+		t1 = high_resolution_clock::now();
+		pipelineTest(testSize, testMatrix, shift, increase, square);	
+		t2 = high_resolution_clock::now();
+		time_span_pipeline += duration_cast<duration<double>>(t2 - t1);
+
+		t1 = high_resolution_clock::now();
+		stages(testSize, testMatrix, shift, increase, square);	
+		t2 = high_resolution_clock::now();
+		time_span_stages += duration_cast<duration<double>>(t2 - t1);
+	}
+	cout << "Generated manual: average: " << time_span_manual.count() / double(nbOfIterations) << " seconds." << endl;
+	cout << "Generated Pipeline: average: " << time_span_pipeline.count() / double(nbOfIterations) << " seconds." << endl;
+	cout << "Sequential: average: " << time_span_stages.count() / double(nbOfIterations) << " seconds." << endl;
 }
