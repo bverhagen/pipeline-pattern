@@ -88,9 +88,8 @@ int main(int argc, char** argv) {
 	t1 = high_resolution_clock::now();
 	vector<uint32_t> pipelineResult;
 	pipelineResult.reserve(testSize);
-	Pipeline<uint32_t, Shift, Increase> pipeline(shift, increase);
 	for(uint32_t i = 0; i < testSize; ++i) {
-		pipelineResult[i] = pipeline(testMatrix[i]);	
+		pipelineResult[i] = pipeline(testMatrix[i], shift, increase);	
 	}
 	t2 = high_resolution_clock::now();
 

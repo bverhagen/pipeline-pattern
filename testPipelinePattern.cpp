@@ -124,8 +124,7 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 		Object3 o3;
 
 		WHEN("We call the pipeline with one object as action") {
-			Pipeline<void, Object1> action(o1);
-			action();
+			pipeline(1U, o1);
 
 			THEN("We should have called the object") {
 				REQUIRE(o1.getNbOfTimesCalled() == 1);
@@ -135,9 +134,8 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 		WHEN("We call the pipeline with one object as action ten times") {
 			const uint8_t nbOfTimesToLoop = 10U;
 
-			Pipeline<void, Object1> action(o1);
 			for(uint8_t i = 0; i < nbOfTimesToLoop; ++i) {
-				action();
+				pipeline(1U, o1);
 			}
 
 			THEN("We should have called the object the appropriate number of times") {
@@ -146,8 +144,7 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 		}
 
 		WHEN("We call the pipeline with these two objects as action") {
-			Pipeline2<void, Object1, Object2> action(o1, o2);
-			action();
+			pipeline(1U, o1, o2);
 
 			THEN("We should have called all objects once") {
 				REQUIRE(o1.getNbOfTimesCalled() == 1);
@@ -157,9 +154,8 @@ SCENARIO( "If we use the pipeline, objects are called the defined number of time
 		
 		WHEN("We call the pipeline with these three objects as action ten times") {
 			const uint8_t nbOfTimesToLoop = 10U;
-			Pipeline3<void, Object1, Object2, Object3> action(o1, o2, o3);
 			for(uint8_t i = 0; i < nbOfTimesToLoop; ++i) {
-				action();
+				pipeline(1U, o1, o2, o3);
 			}
 
 			THEN("We should have called all objects the appropriate number of times") {
@@ -192,11 +188,10 @@ SCENARIO("Using the pipeline on loops in the elements", "[loopTests]") {
 		Object1 o1;
 		Object2 o2;
 		Object3 o3;
-		Pipeline3<uint32_t, Object1, Object2, Object3> action(o1, o2, o3);
 
 		WHEN("We loop over the elements, calling the pipeline for each element") {
 			for(vector<uint32_t>::iterator it = orderedElementsCollection.begin(); it != orderedElementsCollection.end(); ++it) {
-				uint32_t result = action(*it);
+				uint32_t result = pipeline(*it, o1, o2, o3);
 			}
 
 			THEN("Each of the objects should return the same size for each call to the pipeline") {
