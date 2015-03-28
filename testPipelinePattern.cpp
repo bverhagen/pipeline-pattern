@@ -32,6 +32,7 @@ using std::numeric_limits;
 using std::srand;
 using std::rand;
 
+template<typename T>
 class Object1 {
     public:
 		Object1(void) : _nbOfTimesCalled(0U), _receivedContent() {
@@ -42,7 +43,7 @@ class Object1 {
 			++_nbOfTimesCalled;
         }
 
-		uint32_t operator() (uint32_t x) {
+		T operator() (T x) {
 			++_nbOfTimesCalled;
 			_receivedContent.push_back(x);
 			return x;
@@ -61,6 +62,7 @@ class Object1 {
 		vector<uint32_t> _receivedContent; 
 };
 
+template <typename T>
 class Object2 {
     public: 
 		Object2(void) : _nbOfTimesCalled(0U) {
@@ -71,7 +73,7 @@ class Object2 {
 			++_nbOfTimesCalled;
         }
 
-		uint32_t operator() (uint32_t x) {
+		T operator() (T x) {
 			++_nbOfTimesCalled;
 			_receivedContent.push_back(x);
 			return x;
@@ -89,6 +91,7 @@ class Object2 {
 		vector<uint32_t> _receivedContent; 
 };
 
+template <typename T>
 class Object3 {
     public: 
 		Object3(void) : _nbOfTimesCalled(0U) {
@@ -99,7 +102,7 @@ class Object3 {
 			++_nbOfTimesCalled;
         }
 
-		uint32_t operator() (uint32_t x) {
+		T operator() (T x) {
 			++_nbOfTimesCalled;
 			_receivedContent.push_back(x);
 			return x;
@@ -119,9 +122,9 @@ class Object3 {
 
 SCENARIO( "If we use the pipeline, objects are called the defined number of times", "[generalTest]" ) {
 	GIVEN("Three initialized objects") {
-	    Object1 o1;
-		Object2 o2;
-		Object3 o3;
+	    Object1<uint32_t> o1;
+		Object2<uint32_t> o2;
+		Object3<uint32_t> o3;
 
 		WHEN("We call the pipeline with one object as action") {
 			pipeline(1U, o1);
@@ -185,9 +188,9 @@ SCENARIO("Using the pipeline on loops in the elements", "[loopTests]") {
 		REQUIRE(nbOfElements == orderedElementsCollection.size());
 
 		// Construct the Pipeline
-		Object1 o1;
-		Object2 o2;
-		Object3 o3;
+		Object1<uint32_t> o1;
+		Object2<uint32_t> o2;
+		Object3<uint32_t> o3;
 
 		WHEN("We loop over the elements, calling the pipeline for each element") {
 			for(vector<uint32_t>::iterator it = orderedElementsCollection.begin(); it != orderedElementsCollection.end(); ++it) {
