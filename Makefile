@@ -27,24 +27,23 @@ $(ODIR)/%.o: %.cpp $(DEPS)
 all: testNinetyEight testEleven
 
 .PHONY: testNinetyEight
-testNinetyEight: $(OUTPUTDIR)/testNinetyEight 
-
+testNinetyEight: $(OUTPUTDIR)/testNinetyEight
 .PHONY: testEleven
 testEleven: $(OUTPUTDIR)/testEleven
 
-$(OUTPUTDIR)/testNinetyEight: $(OBJ)
+$(OUTPUTDIR)/testNinetyEight: $(OBJ) pipelinePattern.hpp
 		$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 # Add C++11 flag
 $(OUTPUTDIR)/testEleven: CFLAGS+=$(ELEVENFLAGS)
-$(OUTPUTDIR)/testEleven: $(OBJ) $(HDEPS)
+$(OUTPUTDIR)/testEleven: $(OBJ) $(HDEPS) pipelinePattern.hpp
 		$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: testPerformance
 testPerformance: $(OUTPUTDIR)/testPerformance
 
 $(OUTPUTDIR)/testPerformance: CFLAGS+=$(ELEVENFLAGS)
-$(OUTPUTDIR)/testPerformance: $(TESTOBJ)
+$(OUTPUTDIR)/testPerformance: $(TESTOBJ) pipelinePattern.hpp
 		$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 
