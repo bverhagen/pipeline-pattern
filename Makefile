@@ -1,7 +1,7 @@
 CC=gcc
 
 IDIR =../include
-CFLAGS=-O3 -I$(IDIR) -isystem include/catch/include
+CFLAGS=-O3 -I$(IDIR) -isystem include/catch/include -Wall
 ELEVENFLAGS=-std=c++11
 
 ODIR=obj
