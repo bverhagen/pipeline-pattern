@@ -1,7 +1,8 @@
 CC=gcc
 
 IDIR =../include
-CFLAGS=-O3 -I$(IDIR) -isystem include/catch/include -Wall
+CFLAGS=-g -O3 -I$(IDIR) -isystem include/catch/include -Wall -Wextra -Werror -Wno-long-long -Wno-variadic-macros 
+
 ELEVENFLAGS=-std=c++11
 
 ODIR=obj
@@ -16,7 +17,7 @@ DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 _OBJ = catchMain.o testPipelinePattern.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
-_TESTOBJ = testPerformance.o
+_TESTOBJ = testPerformance.o dummy.o
 TESTOBJ = $(patsubst %,$(ODIR)/%,$(_TESTOBJ))
 
 $(ODIR)/%.o: %.cpp $(DEPS)
