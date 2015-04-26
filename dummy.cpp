@@ -22,10 +22,6 @@ bool alwaysReturnFalse() {
 	return false;
 }
 
-void dummy() {
-	;
-}
-
 void dummy(std::vector<uint32_t>& result) {
 	result.size();
 }

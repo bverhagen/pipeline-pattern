@@ -1,7 +1,7 @@
 CC=gcc
 
 IDIR =../include
-CFLAGS=-g -O3 -I$(IDIR) -isystem include/catch/include -Wall -Wextra -Werror -Wno-long-long -Wno-variadic-macros 
+CFLAGS=-g -O3 -I$(IDIR) -isystem include/catch/include -Wall -Wextra -Werror -Wno-long-long -Wno-variadic-macros -fno-tree-vectorize 
 
 ELEVENFLAGS=-std=c++11
 
