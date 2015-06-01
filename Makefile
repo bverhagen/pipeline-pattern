@@ -16,8 +16,13 @@ LIBS=-lstdc++
 _DEPS =
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = catchMain.o testPipelinePattern.o
+CATCH_OBJ = catchMain.o
+
+_OBJ = $(CATCH_OBJ) testPipelinePattern.o 
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+
+_MVA_OBJ = $(CATCH_OBJ) testMultipleVariadicArguments.o 
+MVA_OBJ = $(patsubst %,$(ODIR)/%,$(_MVA_OBJ))
 
 _TESTOBJ = testPerformance.o dummy.o
 TESTOBJ = $(patsubst %,$(ODIR)/%,$(_TESTOBJ))
@@ -30,16 +35,23 @@ $(ODIR)/%.o: %.cpp $(DEPS)
 all: testNinetyEight testEleven
 
 .PHONY: testNinetyEight
-testNinetyEight: $(OUTPUTDIR)/testNinetyEight
-.PHONY: testEleven
-testEleven: $(OUTPUTDIR)/testEleven
+testNinetyEight: testPipelinePattern
 
-$(OUTPUTDIR)/testNinetyEight: $(OBJ) pipelinePattern.hpp
+.PHONY: testEleven
+testEleven: CFLAGS+=$(ELEVENFLAGS)
+testEleven: testPipelinePattern testMultipleVariadicArguments
+
+.PHONY: testPipelinePattern
+testPipelinePattern: $(OUTPUTDIR)/testPipelinePattern
+
+$(OUTPUTDIR)/testPipelinePattern: $(OBJ) pipelinePattern.hpp
 		$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-# Add C++11 flag
-$(OUTPUTDIR)/testEleven: CFLAGS+=$(ELEVENFLAGS)
-$(OUTPUTDIR)/testEleven: $(OBJ) $(HDEPS) pipelinePattern.hpp
+.PHONY: testMultipleVariadicArguments
+testMultipleVariadicArguments: $(OUTPUTDIR)/testMultipleVariadicArguments
+
+$(OUTPUTDIR)/testMultipleVariadicArguments: $(MVA_OBJ) $(HDEPS) multipleVariadicArguments.hpp
+		echo $(CFLAGS)
 		$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: testPerformance
