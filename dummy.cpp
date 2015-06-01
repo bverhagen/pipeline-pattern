@@ -15,6 +15,8 @@
  *
  * =====================================================================================
  */
+#include <cassert>
+#include <iostream>
 
 #include "dummy.hpp"
 
@@ -24,4 +26,6 @@ bool alwaysReturnFalse() {
 
 void dummy(std::vector<uint32_t>& result) {
 	result.size();
+	std::cerr << "We are not supposed to come in here" << std::endl;
+	assert(false);
 }

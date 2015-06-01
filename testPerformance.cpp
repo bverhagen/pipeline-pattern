@@ -23,6 +23,7 @@
 #include <limits>
 #include <cassert>
 #include <string>
+#include <iomanip>
 
 #include "pipelinePattern.hpp"
 #include "dummy.hpp"
@@ -35,10 +36,12 @@ using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
+using std::setfill;
+using std::setw;
 
 using namespace std::chrono;
 
-const double minimumExecutionTime = 2.0;
+const double minimumExecutionTime = 5.0;
 
 enum PerformanceOptions {
 	PerformanceOptions_Manual = 0,
@@ -86,38 +89,37 @@ class Square {
 };
 
 inline void showResult(std::string msg, duration<double> time, uint32_t nbOfIterations) {
-	cout << msg << time.count() / double(nbOfIterations) << " seconds (" << nbOfIterations << " iterations in " << time.count() << " seconds)" << endl;
+	cout << setfill(' ') << setw(28) << msg << setfill(' ') << setw(13) << time.count() / double(nbOfIterations) << " seconds (" << setfill(' ') << setw(15) << nbOfIterations << " iterations in " << time.count() << " seconds)" << endl;
 }
 
 template<typename T>
-vector<T> manual(uint32_t testSize, const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
+vector<T> manual(const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
 	vector<T> unrolledResult;
-	unrolledResult.reserve(testSize);
-	auto unrolledResultIt = unrolledResult.begin();
-	for(auto testMatrixIt = testMatrix.begin(); testMatrixIt != testMatrix.end(); ++testMatrixIt, ++unrolledResultIt) {
-		*unrolledResultIt = square(increase(shift(*testMatrixIt)));
+	unrolledResult.reserve(testMatrix.size());
+	for(auto testMatrixIt = testMatrix.begin(); testMatrixIt != testMatrix.end(); ++testMatrixIt) {
+		unrolledResult.push_back(square(increase(shift(*testMatrixIt))));
 	}
+	assert(unrolledResult.size() == testMatrix.size());
 	return unrolledResult;
 }
 
 template<typename T>
-vector<T> pipelineTest(uint32_t testSize, const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
+vector<T> pipelineTest(const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
 	vector<T> pipelineResult;
-	pipelineResult.reserve(testSize);
-	auto pipelineResultIt = pipelineResult.begin();
-	for(auto testMatrixIt = testMatrix.begin(); testMatrixIt != testMatrix.end(); ++testMatrixIt, ++pipelineResultIt) {
-		*pipelineResultIt = pipeline(*testMatrixIt, shift, increase, square);	
+	pipelineResult.reserve(testMatrix.size());
+	for(auto testMatrixIt = testMatrix.begin(); testMatrixIt != testMatrix.end(); ++testMatrixIt) {
+		pipelineResult.push_back(pipeline(*testMatrixIt, shift, increase, square));
 	}
+	assert(pipelineResult.size() == testMatrix.size());
 	return pipelineResult;
 }
 
 template<typename T>
-vector<T> stages(uint32_t testSize, const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
+vector<T> stages(const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
 	vector<T> directResult;
-	directResult.reserve(testSize);
-	auto directResultIt = directResult.begin();
-	for(auto testMatrixIt = testMatrix.begin(); testMatrixIt != testMatrix.end(); ++testMatrixIt, ++directResultIt) {
-		*directResultIt = shift(*testMatrixIt);
+	directResult.reserve(testMatrix.size());
+	for(auto testMatrixIt = testMatrix.begin(); testMatrixIt != testMatrix.end(); ++testMatrixIt) {
+		directResult.push_back(shift(*testMatrixIt));
 	}
 	if(alwaysReturnFalse()) {
 		dummy(directResult);
@@ -131,16 +133,17 @@ vector<T> stages(uint32_t testSize, const std::vector<T>& testMatrix, const Shif
 	for(auto it = directResult.begin(); it != directResult.end(); ++it) {
 		*it = square(*it);
 	}
+	assert(directResult.size() == testMatrix.size());
 	return directResult;
 }
 
 template<typename T>
-vector<T> stagesNoIntervention(uint32_t testSize, const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
+vector<T> stagesNoIntervention(const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
 	vector<T> directResult;
-	directResult.reserve(testSize);
-	auto directResultIt = directResult.begin();
-	for(auto testMatrixIt = testMatrix.begin(); testMatrixIt != testMatrix.end(); ++testMatrixIt, ++directResultIt) {
-		*directResultIt = shift(*testMatrixIt);
+	directResult.reserve(testMatrix.size());
+
+	for(auto testMatrixIt = testMatrix.begin(); testMatrixIt != testMatrix.end(); ++testMatrixIt) {
+		directResult.push_back(shift(*testMatrixIt));
 	}
 	for(auto it = directResult.begin(); it != directResult.end(); ++it) {
 		*it = increase(*it);
@@ -148,18 +151,26 @@ vector<T> stagesNoIntervention(uint32_t testSize, const std::vector<T>& testMatr
 	for(auto it = directResult.begin(); it != directResult.end(); ++it) {
 		*it = square(*it);
 	}
+	assert(directResult.size() == testMatrix.size());
 	return directResult;
 }
 
 template<typename T>
-bool checkResults(vector<T> foundResult, vector<T> correctResult) {
-	if(! foundResult.size() == correctResult.size()) {
+bool checkResults(const vector<T>& foundResult, const vector<T>& correctResult) {
+	if(foundResult.size() == 0) {
+		cerr << "Size of the found result is 0" << endl;
+		return false;
+	}
+
+	if(foundResult.size() != correctResult.size()) {
+		cerr << "Size of found result is " << foundResult.size() << " while size of correct result is " << correctResult.size() << endl;
 		return false;
 	}
 
 	auto foundResultIt = foundResult.begin();
 	for(auto correctResultIt = correctResult.begin(); correctResultIt != correctResult.end(); ++correctResultIt, ++foundResultIt) {
 		if(! *correctResultIt == *foundResultIt) {
+			cerr << "Erroneous value found" << endl;
 			return false;
 		}
 	}	
@@ -167,10 +178,75 @@ bool checkResults(vector<T> foundResult, vector<T> correctResult) {
 }
 
 template<typename T>
-void checkResults(string msg, vector<T> foundResult, vector<T> correctResult) {
+void checkResults(string msg, const vector<T>& foundResult, const vector<T>& correctResult) {
 	if(! checkResults(foundResult, correctResult)) {
 		cerr << msg << " gave an error" << endl;
+		assert(true);
 	}
+}
+
+template<typename T>
+void executeManual(const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
+	auto nbOfIterations = 0U;
+	auto t1 = high_resolution_clock::now();
+	auto time = duration_cast<duration<double>>(high_resolution_clock::now()-t1);
+	while(time.count() < minimumExecutionTime) {
+		auto result = manual(testMatrix, shift, increase, square);
+		if(alwaysReturnFalse()) {
+			dummy(result);	
+		}
+		time = duration_cast<duration<double>>(high_resolution_clock::now() - t1);
+		++nbOfIterations;
+	}
+	showResult("Generated manual: ", time, nbOfIterations);
+}
+
+template<typename T>
+void executePipeline(const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
+	auto nbOfIterations = 0U;
+	auto t1 = high_resolution_clock::now();
+	auto time = duration_cast<duration<double>>(high_resolution_clock::now()-t1);
+	while(time.count() < minimumExecutionTime) {
+		auto result = pipelineTest(testMatrix, shift, increase, square);	
+		if(alwaysReturnFalse()) {
+			dummy(result);	
+		}
+		time = duration_cast<duration<double>>(high_resolution_clock::now() - t1);
+		++nbOfIterations;
+	}
+	showResult("Generated pipeline: ", time, nbOfIterations);
+}
+
+template<typename T>
+void executeStages(const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
+	auto nbOfIterations = 0U;
+	auto t1 = high_resolution_clock::now();
+	auto time = duration_cast<duration<double>>(high_resolution_clock::now()-t1);
+	while(time.count() < minimumExecutionTime) {
+		auto result = stages(testMatrix, shift, increase, square);	
+		if(alwaysReturnFalse()) {
+			dummy(result);	
+		}
+		time = duration_cast<duration<double>>(high_resolution_clock::now() - t1);
+		++nbOfIterations;
+	}
+	showResult("Sequential: ", time, nbOfIterations);
+}
+
+template<typename T>
+void executeStagesNoIntervention(const std::vector<T>& testMatrix, const Shift& shift, const Increase& increase, const Square& square) {
+	auto nbOfIterations = 0U;
+	auto t1 = high_resolution_clock::now();
+	auto time = duration_cast<duration<double>>(high_resolution_clock::now()-t1);
+	while(time.count() < minimumExecutionTime) {
+		auto result = stagesNoIntervention(testMatrix, shift, increase, square);	
+		if(alwaysReturnFalse()) {
+			dummy(result);	
+		}
+		time = duration_cast<duration<double>>(high_resolution_clock::now() - t1);
+		++nbOfIterations;
+	}
+	showResult("Sequential no intervention: ", time, nbOfIterations);
 }
 
 int main(int argc, char** argv) {
@@ -205,89 +281,40 @@ int main(int argc, char** argv) {
 		options.push_back(PerformanceOptions_Pipeline);
 	}
 
-	duration<double> time = duration<double>::zero();
-
 	srand(0);
 	vector<uint32_t> testMatrix;
 	testMatrix.reserve(testSize);
 	for(auto j = 0U; j < testSize; ++j) {
 		testMatrix.push_back(rand());
 	}	
+	assert(testMatrix.size() == testSize);
 
 	Shift shift(2);
 	Increase increase(2);
 	Square square;
 
 	// Check whether results are the same. This also helps for warm(er) calculations
-	vector<uint32_t> manualResult = manual(testSize, testMatrix, shift, increase, square);
-	vector<uint32_t> pipelineResult = pipelineTest(testSize, testMatrix, shift, increase, square);
-	vector<uint32_t> stagesResult = stages(testSize, testMatrix, shift, increase, square);
-	vector<uint32_t> stagesNoInterventionResult = stagesNoIntervention(testSize, testMatrix, shift, increase, square);
+	vector<uint32_t> manualResult = manual(testMatrix, shift, increase, square);
+	vector<uint32_t> pipelineResult = pipelineTest(testMatrix, shift, increase, square);
+	vector<uint32_t> stagesResult = stages(testMatrix, shift, increase, square);
+	vector<uint32_t> stagesNoInterventionResult = stagesNoIntervention(testMatrix, shift, increase, square);
 	checkResults("pipeline", manualResult, pipelineResult);
 	checkResults("stages", manualResult, stagesResult);
 	checkResults("stages no intervention", manualResult, stagesNoInterventionResult);
 
 	for(auto option : options) {
 		switch(option) {
-			case PerformanceOptions_Manual: {
-				auto nbOfIterations = 0U;
-				auto t1 = high_resolution_clock::now();
-				time = duration_cast<duration<double>>(high_resolution_clock::now()-t1);
-				while(time.count() < minimumExecutionTime) {
-					auto result = manual(testSize, testMatrix, shift, increase, square);	
-					if(alwaysReturnFalse()) {
-						dummy(result);	
-					}
-					++nbOfIterations;
-					time = duration_cast<duration<double>>(high_resolution_clock::now() - t1);
-				}
-				showResult("Generated manual: average: ", time, nbOfIterations);
-			}
+			case PerformanceOptions_Manual:
+				executeManual(testMatrix, shift, increase, square);
 				break;
-			case PerformanceOptions_Pipeline: {
-				auto nbOfIterations = 0U;
-				auto t1 = high_resolution_clock::now();
-				time = duration_cast<duration<double>>(high_resolution_clock::now()-t1);
-				while(time.count() < minimumExecutionTime) {
-					auto result = pipelineTest(testSize, testMatrix, shift, increase, square);	
-					if(alwaysReturnFalse()) {
-						dummy(result);	
-					}
-					++nbOfIterations;
-					time = duration_cast<duration<double>>(high_resolution_clock::now() - t1);
-				}
-				showResult("Generated pipeline: average: ", time, nbOfIterations);
-			}
+			case PerformanceOptions_Pipeline:
+				executePipeline(testMatrix, shift, increase, square);
 				break;
-			case PerformanceOptions_Stages: {
-				auto nbOfIterations = 0U;
-				auto t1 = high_resolution_clock::now();
-				time = duration_cast<duration<double>>(high_resolution_clock::now()-t1);
-				while(time.count() < minimumExecutionTime) {
-					auto result = stages(testSize, testMatrix, shift, increase, square);	
-					if(alwaysReturnFalse()) {
-						dummy(result);	
-					}
-					++nbOfIterations;
-					time = duration_cast<duration<double>>(high_resolution_clock::now() - t1);
-				}
-				showResult("Sequential: average: ", time, nbOfIterations);
-			}
+			case PerformanceOptions_Stages:
+				executeStages(testMatrix, shift, increase, square);
 				break;
-			case PerformanceOptions_StagesNoInvervention: {
-				auto nbOfIterations = 0U;
-				auto t1 = high_resolution_clock::now();
-				time = duration_cast<duration<double>>(high_resolution_clock::now()-t1);
-				while(time.count() < minimumExecutionTime) {
-					auto result = stagesNoIntervention(testSize, testMatrix, shift, increase, square);	
-					if(alwaysReturnFalse()) {
-						dummy(result);	
-					}
-					++nbOfIterations;
-					time = duration_cast<duration<double>>(high_resolution_clock::now() - t1);
-				}
-				showResult("Sequential no intervention: average: ", time, nbOfIterations);
-			}
+			case PerformanceOptions_StagesNoInvervention:
+				executeStagesNoIntervention(testMatrix, shift, increase, square);
 				break;
 			default:
 				cerr << "Performance option not supported" << endl;

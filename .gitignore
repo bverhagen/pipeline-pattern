@@ -1,4 +1,10 @@
 obj/
 bin/
 
+# Profiling tmp files
+output*.png
+callgrind.out.*
+gmon.out
+perf.data*
+
 *.swp
