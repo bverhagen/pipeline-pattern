@@ -108,6 +108,7 @@ SCENARIO("Call a function using multiple variadic arguments") {
 			callMultipleArgumentFunction(testObject);
 
 			THEN("No values of the test object should have changed") {
+				REQUIRE(testObject.getNbOfTimesEmptyFunctorCalled() == 1U);	
 				REQUIRE(testObject.getIntValue1() == initValue);	
 				REQUIRE(testObject.getIntValue2() == initValue);	
 				REQUIRE(testObject.getDoubleValue1() == initValue);	
@@ -118,6 +119,7 @@ SCENARIO("Call a function using multiple variadic arguments") {
 			callMultipleArgumentFunction(testObject, newValue);
 
 			THEN("The corresponding values of the test object must have changed") {
+				REQUIRE(testObject.getNbOfTimesEmptyFunctorCalled() == 0U);	
 				REQUIRE(testObject.getIntValue1() == newValue);	
 				REQUIRE(testObject.getIntValue2() == initValue);	
 				REQUIRE(testObject.getDoubleValue1() == initValue);	
@@ -128,6 +130,7 @@ SCENARIO("Call a function using multiple variadic arguments") {
 			callMultipleArgumentFunction(testObject, newValue, newValue);
 
 			THEN("The corresponding values of the test object must have changed") {
+				REQUIRE(testObject.getNbOfTimesEmptyFunctorCalled() == 0U);	
 				REQUIRE(testObject.getIntValue1() == newValue);	
 				REQUIRE(testObject.getIntValue2() == newValue);	
 				REQUIRE(testObject.getDoubleValue1() == initValue);	
@@ -138,6 +141,7 @@ SCENARIO("Call a function using multiple variadic arguments") {
 			callMultipleArgumentFunction(testObject, newValue, newDoubleValue);
 
 			THEN("The corresponding values of the test object must have changed") {
+				REQUIRE(testObject.getNbOfTimesEmptyFunctorCalled() == 0U);	
 				REQUIRE(testObject.getIntValue1() == newValue);	
 				REQUIRE(testObject.getIntValue2() == initValue);	
 				REQUIRE(testObject.getDoubleValue1() == newDoubleValue);	
@@ -148,6 +152,7 @@ SCENARIO("Call a function using multiple variadic arguments") {
 			callMultipleArgumentFunction(testObject, newValue, newDoubleValue, newValue);
 
 			THEN("The corresponding values of the test object must have changed") {
+				REQUIRE(testObject.getNbOfTimesEmptyFunctorCalled() == 0U);	
 				REQUIRE(testObject.getIntValue1() == newValue);	
 				REQUIRE(testObject.getIntValue2() == newValue);	
 				REQUIRE(testObject.getDoubleValue1() == newDoubleValue);	
@@ -158,8 +163,29 @@ SCENARIO("Call a function using multiple variadic arguments") {
 			callMultipleArgumentFunction(testObject, newValue, newDoubleValue, newValue, multipleVariadicArgumentSeparator);
 
 			THEN("The corresponding values of the test object must have changed") {
+				REQUIRE(testObject.getNbOfTimesEmptyFunctorCalled() == 0U);	
 				REQUIRE(testObject.getIntValue1() == newValue);	
 				REQUIRE(testObject.getIntValue2() == newValue);	
+				REQUIRE(testObject.getDoubleValue1() == newDoubleValue);	
+			}
+		}
+		WHEN("We call the test object with a number of arguments after	the separator") {
+			callMultipleArgumentFunction(testObject, multipleVariadicArgumentSeparator, newValue, newDoubleValue, newValue);
+
+			THEN("The corresponding values of the test object must have changed") {
+				REQUIRE(testObject.getNbOfTimesEmptyFunctorCalled() == 1U);	// For the empty functor call before the separator
+				REQUIRE(testObject.getIntValue1() == newValue);	
+				REQUIRE(testObject.getIntValue2() == newValue);	
+				REQUIRE(testObject.getDoubleValue1() == newDoubleValue);	
+			}
+		}
+		WHEN("We call the test object with a number of arguments before and after the separator") {
+			callMultipleArgumentFunction(testObject, newValue, multipleVariadicArgumentSeparator, newDoubleValue);
+
+			THEN("The corresponding values of the test object must have changed") {
+				REQUIRE(testObject.getNbOfTimesEmptyFunctorCalled() == 0U);
+				REQUIRE(testObject.getIntValue1() == newValue);	
+				REQUIRE(testObject.getIntValue2() == initValue);	
 				REQUIRE(testObject.getDoubleValue1() == newDoubleValue);	
 			}
 		}

@@ -6,16 +6,24 @@
 
 class MultipleVariadicArgumentTestObject {
 	public:
-		MultipleVariadicArgumentTestObject() : _intValue1(getInitialIntValue()), _intValue2(getInitialIntValue()), _doubleValue1(getInitialDoubleValue()) {
+		MultipleVariadicArgumentTestObject() : 
+			_nbOfTimesEmptyFunctorCalled(0U),
+			_intValue1(getInitialIntValue()), 
+			_intValue2(getInitialIntValue()), 
+			_doubleValue1(getInitialDoubleValue()) {
 			;
 		}
 
 		void operator()(void) {
-			;
+			++_nbOfTimesEmptyFunctorCalled;
 		}
 
 		void operator()(uint32_t intValue) {
 			_intValue1 = intValue;
+		}
+
+		void operator()(double doubleValue) {
+			_doubleValue1 = doubleValue;
 		}
 		 
 		void operator()(uint32_t intValue1, uint32_t intValue2) {
@@ -32,6 +40,10 @@ class MultipleVariadicArgumentTestObject {
 			_intValue1 = intValue1;
 			_doubleValue1 = doubleValue;
 			_intValue2 = intValue2;
+		}
+		
+		uint32_t getNbOfTimesEmptyFunctorCalled(void) {
+			return _nbOfTimesEmptyFunctorCalled;
 		}
 
 		uint32_t getIntValue1(void) {
@@ -55,6 +67,7 @@ class MultipleVariadicArgumentTestObject {
 		}
 
 	private:
+		uint32_t _nbOfTimesEmptyFunctorCalled;
 		uint32_t _intValue1;
 		uint32_t _intValue2;
 		double _doubleValue1;

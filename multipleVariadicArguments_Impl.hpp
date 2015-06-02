@@ -49,15 +49,15 @@ namespace detail {
 
 	// Unpack tuple implementation
 	// Heavily based on: http://stackoverflow.com/questions/10766112/c11-i-can-go-from-multiple-args-to-tuple-but-can-i-go-from-tuple-to-multiple
-	template <bool done, typename F, typename Tuple, int nbOfArgumentsToTake, int... N>
+	template <bool done, typename F, typename Tuple, int nbOfArgumentsToTake, int offset, int... N>
 	struct MultipleVariadicArgumentCall_Impl {
 		static void call (F& f, Tuple&& t) {
-			MultipleVariadicArgumentCall_Impl<nbOfArgumentsToTake == 1+sizeof...(N), F, Tuple, nbOfArgumentsToTake, N..., sizeof...(N)>::call(f,t);	
+			MultipleVariadicArgumentCall_Impl<nbOfArgumentsToTake == 1+sizeof...(N), F, Tuple, nbOfArgumentsToTake, offset, N..., sizeof...(N) + offset>::call(f,t);	
 		}
 	};
 
-    template <typename F, typename Tuple, int nbOfArgumentsToTake, int... N>
-    struct MultipleVariadicArgumentCall_Impl<true, F, Tuple, nbOfArgumentsToTake, N...> {
+    template <typename F, typename Tuple, int nbOfArgumentsToTake, int offset, int... N>
+    struct MultipleVariadicArgumentCall_Impl<true, F, Tuple, nbOfArgumentsToTake, offset, N...> {
         static void call(F& f, Tuple&& t) {
 			f(std::get<N>(std::forward<Tuple>(t))...);
         }
@@ -73,7 +73,23 @@ namespace detail {
 	template <typename F, typename Tuple, int nbOfArgumentsToTake, int offset, int... N>
 	struct MultipleVariadicArgumentCallWithOffset<true, F, Tuple, nbOfArgumentsToTake, offset, N...> {
 		static void call(F& f, Tuple&& t) {
-			MultipleVariadicArgumentCall_Impl<0 == nbOfArgumentsToTake, F, Tuple, nbOfArgumentsToTake, sizeof...(N)>::call(f,t);
+			MultipleVariadicArgumentCall_Impl<0 == nbOfArgumentsToTake, F, Tuple, nbOfArgumentsToTake, offset>::call(f,t);
+		}
+	};
+
+	template <int nbOfArgumentsToTake, int offset, bool execute, typename F, typename Tuple>
+	struct callMultipleArgumentFunctionTuple {
+		static void call(F& f, Tuple&& t) {
+			MultipleVariadicArgumentCallWithOffset<0 == offset, F, Tuple, nbOfArgumentsToTake, offset>::call(f, std::forward<Tuple>(t)); 
+		}
+	};
+	
+	template <int nbOfArgumentsToTake, int offset, typename F, typename Tuple>
+	struct callMultipleArgumentFunctionTuple<nbOfArgumentsToTake, offset, false, F, Tuple> {
+		static void call(F& f, Tuple&& t) {
+			// prevent unused errors	
+			(void) f;
+			(void) t;
 		}
 	};
 }
