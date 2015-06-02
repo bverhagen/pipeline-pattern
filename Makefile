@@ -50,7 +50,7 @@ $(OUTPUTDIR)/testPipelinePattern: $(OBJ) pipelinePattern.hpp
 .PHONY: testMultipleVariadicArguments
 testMultipleVariadicArguments: $(OUTPUTDIR)/testMultipleVariadicArguments
 
-$(OUTPUTDIR)/testMultipleVariadicArguments: $(MVA_OBJ) $(HDEPS) multipleVariadicArguments.hpp
+$(OUTPUTDIR)/testMultipleVariadicArguments: $(MVA_OBJ) $(HDEPS) multipleVariadicArguments.hpp multipleVariadicArguments_Impl.hpp testMultipleVariadicArgumentsObjects.hpp
 		echo $(CFLAGS)
 		$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
